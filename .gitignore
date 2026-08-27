@@ -82,3 +82,13 @@ test/
 !package/ego-browser/test/*.test.js
 # Translated skill (local only)
 skills/ego-browser/SKILL.zh.md
+
+# agent-hygiene: runtime state ignores (2026-08-27, codex-reviewed)
+**/.omc/*
+!**/.omc/skills/
+!**/.omc/skills/**
+!**/.omc/RESUME.md
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/.venv/
