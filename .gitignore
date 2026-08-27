@@ -92,3 +92,13 @@ skills/ego-browser/SKILL.zh.md
 **/.ruff_cache/
 **/.mypy_cache/
 **/.venv/
+
+# workspace security audit standard patterns
+.env
+.env.*
+!.env.example
+credentials
+*.key
+*.pem
+token
+*.token
