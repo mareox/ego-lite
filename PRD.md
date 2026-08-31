@@ -1,6 +1,6 @@
 # ego-lite Workstation Integration PRD
 
-**Status:** Active — blocked on installed-app integrity and version reconciliation
+**Status:** Complete — verified mbp4x pilot; atlas remains intentionally excluded
 
 **Owner:** MareoX
 
@@ -116,15 +116,14 @@ lanes:
 | Reviewed `ego-browser` skill in `agent-config` | The same release check flags a changed upstream skill or an app notice that requires the skill to be re-read. | Never overwrite automatically: review the diff and security-sensitive capability changes, then make an explicit, pinned `agent-config` update. |
 
 The installed build already registers a vendor user LaunchAgent with a 3600-second
-interval. The initial implementation must validate that vendor path rather than
-add a competing scheduler. Its `ego-browser upgrade` command may require a
-confirmation dialog when tasks are in flight, so automatic installation is
-allowed only after a manual run proves the stable channel and non-interactive
-behavior with no task active. Record before/after bundle and active bridge
-versions and finish with the supported `ego.getBrowserVersion()` query plus the
-heredoc smoke. If that proof is unavailable, preserve automatic notification
-only. Never invoke the quarantine-stripping upstream installer, download a raw
-DMG, change Chrome migration data, or run an updater on atlas.
+interval. It was manually invoked and forced through that existing job with zero
+active Spaces; both paths completed non-interactively, exited zero, and retained
+the stable `0.4.6.12` app/bridge state. No competing app scheduler was added.
+The separate daily source-drift job is detection-only: it fetches the explicit
+`upstream` remote, reports branch/tag/skill differences, and leaves every update
+to a reviewed, pinned, mbp4x-only `agent-config` deployment. Never invoke the
+quarantine-stripping upstream installer, change Chrome migration data, or run an
+updater on atlas.
 
 ## 6. Storage architecture
 
@@ -147,7 +146,7 @@ The full checkout is not the live agent skill directory. `agent-config` remains
 the cross-agent source of truth, while this fork remains the place to inspect
 upstream changes and, if desired, maintain MareoX-specific patches.
 
-### Observed installed state — hold, not pilot acceptance
+### Observed installed state — pilot complete
 
 On 2026-08-07, live inspection on `MBP4x.local` found the following:
 
@@ -155,21 +154,46 @@ On 2026-08-07, live inspection on `MBP4x.local` found the following:
   `0.4.6.12` (build `4.6.12`), and is accepted by `spctl` as a notarized
   Developer ID application from Team ID `JGQLC6YQYJ`.
 - The active `ego-browser` launcher resolves through
-  `~/.local/share/ego/active_version_dir` to framework version `0.4.5.9`.
-  Its supported bridge query reports `currentVersion: 0.4.5.9` and
-  `updateAvailable: true`.
+  `~/.local/share/ego/active_version_dir` to framework version `0.4.6.12`.
+  Its supported bridge query reports `currentVersion: 0.4.6.12` and
+  `updateAvailable: false`.
 - `ego-browser --doctor` is not a supported command on this build. The
   documented heredoc smoke does work.
-- `codesign --verify --deep --strict` fails because the embedded framework
-  contains an invalid or modified version. This is a stop condition despite
-  outer signature identity and Gatekeeper acceptance.
-- `~/.agents/skills/ego-browser` and `~/.claude/skills/ego-browser` point to
-  the app-managed `~/.local/share/ego/ego-skills`, not a reviewed Git-backed
-  `agent-config` copy. That skill has a broad preferred-browser trigger.
-
-No profile import, browser Space task, vendor upgrade, or skill replacement was
-performed by this planning closeout. T4 must reconcile the version/trust state
-before any of those actions continue.
+- A fresh download from the official Apple-Silicon DMG endpoint on 2026-08-07
+  matched the CDN-provided SHA-256
+  `bc16662ba84f7ae9c23c8d51319e4913f542b2a143f75bb716669a5e75659cc0` and
+  contained `0.4.5.9` (build `4.5.9`). It passed deep strict verification and
+  Gatekeeper as Citro Labs Team ID `JGQLC6YQYJ`. This is a trusted recovery
+  artifact for a prior trust investigation.
+- On 2026-08-08, the vendor updater aligned the active framework and bridge to
+  `0.4.6.12`, with `updateAvailable: false`. Diagnosis found the active
+  framework passed independently and the full-bundle failure came from
+  disallowed `com.apple.FinderInfo` extended attributes on retained and outer
+  bundle paths. Removing only that attribute from `/Applications/ego lite.app`
+  made `codesign --verify --deep --strict` and Gatekeeper assessment pass;
+  application code, quarantine, provenance, profiles, skills, and updater data
+  were not changed.
+- MareoX confirmed normal-profile import completed on 2026-08-08. Profile
+  contents, sessions, cookies, passwords, and other data were not inspected,
+  copied, or recorded.
+- The app-managed broad skill was replaced only at the provider-link boundary:
+  `~/.claude/skills/ego-browser` and `~/.codex/skills/ego-browser` now resolve
+  to the reviewed, Git-backed, explicit-only
+  `/Users/mareox/GIT/agent-config/skills/ego-browser` wrapper. No unmanaged
+  direct-agent duplicate controls discovery.
+- A dedicated read-only Task Space opened `https://example.com`, read
+  `Example Domain`, and closed with `keep: false`. A fresh Codex
+  `$ego-browser` invocation repeated that proof in its own Space and also
+  closed it with `keep: false`; a final listing found no remaining Spaces. A
+  generic Codex browser request selected the established Chrome browser lane
+  rather than `ego-browser`.
+- The manual updater reported the app current, and a forced execution of the
+  existing hourly vendor LaunchAgent exited zero with the same stable bridge
+  version. No competing app-updater job was added.
+- The checkout has a read-only `upstream` remote plus a daily
+  `com.mareox.ego-lite-source-drift` job. It fetches and compares commits, tags,
+  and `skills/ego-browser` without merging, rebasing, pushing, or modifying the
+  deployed `agent-config` wrapper.
 
 ## 7. Atlas exclusion and future eligibility gate
 
@@ -241,9 +265,10 @@ successful ego-lite installation.
 3. **mbp4x pilot:** install, onboard, and capture exact local state paths.
 4. **Managed integration:** vendor and expose the reviewed skill without
    changing global browser routing or atlas behavior.
-5. **Runtime proof:** run doctor, bridge smoke, and a real read-only Space task.
-6. **Managed updates:** prove the native app upgrader, schedule the mbp4x-only
-   stable app-update job, and automate source/skill drift detection.
+5. **Runtime proof:** run the supported bridge query and heredoc smoke, then a
+   real read-only Space task.
+6. **Managed updates:** prove the native app updater while retaining its
+   existing vendor LaunchAgent, and automate source/skill drift detection.
 7. **Closeout:** record evidence, rollback, remaining gaps, and the continuing
    atlas exclusion.
 
@@ -307,4 +332,4 @@ cannot pass the acceptance tests.
 
 ---
 
-**Last updated:** 2026-08-07
+**Last updated:** 2026-08-08
